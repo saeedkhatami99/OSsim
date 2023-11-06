@@ -152,11 +152,83 @@ bool user_cmd::sysinfo(string cmd) {
     }
     return false;
 }
+bool user_cmd::hex(string cmd) {
+    if (cmd.find("hex") != string::npos) {                                      // hex -r test
+        string val_to_hex = "";
+        bool reverse_hex = false;
+        for (int i = 4; i < strlen(cmd.c_str()); i++) {
+            if(cmd[i] == '-' && cmd[i+1] == 'r'){
+                reverse_hex = true;
+                i += 2;
+            }
+            else {
+                val_to_hex += cmd[i];
+            }
+        }
+        if (reverse_hex) {
+            cout << "[+] Hex (reverse) from " << val_to_hex << " is " << strtoul(val_to_hex.c_str(), NULL, 16) << endl;
+            return true;
+        }
+        else {
+            ostringstream ret;
+            for (string::size_type i = 0; i < val_to_hex.length(); ++i)
+                ret << std::hex << std::setfill('0') << std::setw(2) << (int)val_to_hex[i];
+            cout << "[+] Hex from " << val_to_hex << " is " << ret.str() << endl;
+            return true;
+        }
+
+    }
+
+    return false;
+}
+bool user_cmd::render_img(string cmd) {
+    if (cmd.find("render") != string::npos) {
+        string img_file = "";
+        for (int i = 7; i < strlen(cmd.c_str()); i++) {
+            img_file += cmd[i];
+        }
+        std::wstring conv_str = std::wstring(img_file.begin(), img_file.end());
+        LPCWSTR file = conv_str.c_str();
+        RECT rect;
+        GetWindowRect(GetConsoleWindow(), &rect);
+        cout << rect.left << " " << rect.right << " " << rect.bottom << " " << rect.top << " " << endl;
+        int width = rect.right - rect.left;
+        int height = rect.bottom - rect.top;
+        unsigned char buf[8];
+        std::ifstream in(img_file);
+        HDC hdc = CreateCompatibleDC(NULL);
+        HDC console_dc = GetDC(GetConsoleWindow());
+        HBITMAP bmp = (HBITMAP)LoadImageW(NULL, file, IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
+        BITMAP bm = { 0 };
+        GetObject(bmp, sizeof(bm), &bm);
+        LONG cx = bm.bmWidth;
+        LONG cy = bm.bmHeight;
+        HBITMAP hold = (HBITMAP)SelectObject(hdc, bmp);
+        int image_px_loc_x = 0;
+        int image_px_loc_y = 0;
+        for (int i = (width - 50 - cx); i < width - 50 + cx; i++) {
+            for (int j = 0 + (cy / 3); j < (cy/3) + cy; j++) {
+                DWORD color = GetPixel(hdc, image_px_loc_x, image_px_loc_y);
+                SetPixel(console_dc, i, j, RGB((short)GetRValue(color), (short)GetGValue(color), (short)GetBValue(color)));
+
+                image_px_loc_y++;
+            }
+            image_px_loc_x++;
+            image_px_loc_y = 0;
+        }
+        cout << "[+] Rendered image " << img_file << endl;
+        SelectObject(hdc, hold);
+        DeleteObject(bmp);
+        DeleteDC(hdc);
+        return true;
+    }
+    return false;
+}
 bool user_cmd::exit_sys(string cmd) {
     if (cmd.find("exit") != string::npos) {
         cout << "[-] Turning off the OS..." << endl;
         Sleep(2000);
-        SetConsoleTitle(L"OS - alpha - turned off");
+        SetConsoleTitle(L"OS - turned off");
         system("cls");
         Sleep(3000);
         exit(EXIT_SUCCESS);
@@ -171,6 +243,7 @@ bool user_cmd::help(string cmd) {
             << "    - - test - runs a test command" << endl
             << "    - - clear - clears the OS window" << endl
             << "    - - print - prints out your message (echo)" << endl
+            << "    - - render - renders out a .bmp file in console" << endl
             << "    - - ls - list all files within directory" << endl
             << "    - - mkdir - creates a directory" << endl
             << "    - - ddir - deletes a directory" << endl
@@ -267,12 +340,12 @@ bool user_cmd::nano(string cmd) {
             cout << endl << "[+] nano -> " << nano_file << endl << endl;
             fstream file;
             file.open(nano_file, ios::in);
-            if (file.is_open()) {   
+            if (file.is_open()) {
                 string tp;
-                while (getline(file, tp)) { 
-                    cout << tp << "\n"; 
+                while (getline(file, tp)) {
+                    cout << tp << "\n";
                 }
-                file.close(); 
+                file.close();
             }
             return true;
         }
@@ -284,12 +357,12 @@ bool user_cmd::nano(string cmd) {
             string input;
             fstream file;
             file.open(nano_file, ios::in);
-            if (file.is_open()) {   
+            if (file.is_open()) {
                 string tp;
-                while (getline(file, tp)) { 
-                    input = input + tp + '\n'; 
+                while (getline(file, tp)) {
+                    input = input + tp + '\n';
                 }
-                file.close(); 
+                file.close();
             }
             OpenClipboard(GetConsoleWindow());
             EmptyClipboard();

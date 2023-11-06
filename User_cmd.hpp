@@ -9,6 +9,9 @@
 #include <streambuf>
 #include <istream>
 #include <filesystem>
+#include <sstream>
+#include <wingdi.h>
+#include <winsock.h>
 #include<Psapi.h>
 
 using namespace std;
@@ -58,7 +61,8 @@ static string cpu_name_alt = "";
 static float memory_alt = 0.0f;
 static string runtime_data_alt = "";
 namespace user_cmd {
-
+    bool render_img(string cmd);
+    bool hex(string cmd);
     bool help_c(string cmd);
     bool print(string cmd);
     bool mkdir(string cmd);
