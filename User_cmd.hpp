@@ -55,19 +55,22 @@ void paste() {
     SendInput(1, &input, sizeof(INPUT));
     Sleep(1000);
 }*/
-
+//extern string used_path_alt = "";
 static int threads_alt = 0;
 static string cpu_name_alt = "";
 static float memory_alt = 0.0f;
 static string runtime_data_alt = "";
+
 namespace user_cmd {
+    bool con_color(string cmd);
+    bool cd(string cmd, string& path_r);
     bool render_img(string cmd);
     bool hex(string cmd);
     bool help_c(string cmd);
     bool print(string cmd);
     bool mkdir(string cmd);
     bool ddir(string cmd);
-    bool ls(string cmd);
+    bool ls(string cmd, string custom_path);
     bool sysinfo(string cmd);
     bool exit_sys(string cmd);
     bool help(string cmd);

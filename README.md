@@ -2,7 +2,12 @@
 A straightforward OS/terminal simulation with fundamental system capabilities (resembling Linux).
 
 # Known Bug
-The `ls` command may lead to a program crash when attempting to list directories within a non-existent path.
+- The `ls` command may lead to a program crash when attempting to list directories within a non-existent path.
+`ls` will output blank directories/files if OS executable is not placed and ran in a folder named **OS**
+
+- Currently only `BMP` files are being rendered in terminal, you will need to add `BMP` conversion functions to actually render other
+file types.
+
 
 # This project is part of a college assignment.
 Running this code as is isn't recommended. This version is stable and covers essential functionalities,
