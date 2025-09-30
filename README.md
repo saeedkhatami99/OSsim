@@ -30,10 +30,9 @@ This project is written in C++ and requires a C++ compiler that supports C++17 o
 - On first run, create a user account.
 - Type `help` for available commands.
 
-## Known Issues
+## Limitations
 
-- The `ls` command may crash when attempting to list directories within a non-existent path. (Fixed in modern version with error handling)
-- Currently only `BMP` files are being rendered in terminal, you will need to add `BMP` conversion functions to actually render other file types.
+- Image rendering is limited to BMP files only, as no external image processing libraries are used to maintain pure standard C++ implementation.
 
 ## Project Details
 
