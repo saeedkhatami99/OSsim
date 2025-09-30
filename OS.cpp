@@ -123,7 +123,6 @@ int main()
             }
         }
         
-       // cout << used_path_alt << endl;
         std::getline(std::cin >> std::ws, command);
         log.create_log(OUTPUT_LOG, "user_cmd -> " + command);
         thread user_cmd_exec(recognize_cmd, command);

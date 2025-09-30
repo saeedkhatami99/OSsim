@@ -121,7 +121,7 @@ bool user_cmd::sysinfo(string cmd) {
     GetSystemInfo(&system_info);
     threads_alt = system_info.dwNumberOfProcessors; // cores
     MEMORYSTATUSEX statex;
-    statex.dwLength = sizeof(statex); // I misunderstand that
+    statex.dwLength = sizeof(statex);
     GlobalMemoryStatusEx(&statex);
     memory_alt = (float)statex.ullTotalPhys / (1024 * 1024 * 1024);
     if (cmd.find("sysinfo") != string::npos) {
@@ -336,7 +336,7 @@ bool user_cmd::dfile(string cmd) {
 bool user_cmd::exe(string cmd) {
     transform(cmd.begin(), cmd.end(), cmd.begin(), ::tolower);
     if (cmd.find(".exe") != string::npos) {
-        ShellExecuteA(NULL, "open", cmd.c_str(), NULL, NULL, SW_SHOWDEFAULT); // system is shit, createprocess defeats the purpose
+        ShellExecuteA(NULL, "open", cmd.c_str(), NULL, NULL, SW_SHOWDEFAULT);
         cout << "[+] Ran an executable file: " << cmd << endl;
         return true;
     }
@@ -434,10 +434,10 @@ bool user_cmd::nano(string cmd) {
             }
             OpenClipboard(GetConsoleWindow());
             EmptyClipboard();
-            HGLOBAL h_global = GlobalAlloc(GMEM_MOVEABLE, input.size() + 1);      // since usage of community libraries is forbidden,
-            if (!h_global) {                                                      // I used a ghetto method of copying the input into the
-                CloseClipboard();                                                 // clipboard and pasting it before asking for input, to sort
-                return true;                                                      // of get modifiable text in std::cin without cursor moving.
+            HGLOBAL h_global = GlobalAlloc(GMEM_MOVEABLE, input.size() + 1); // Workaround for editable input using clipboard
+            if (!h_global) {
+                CloseClipboard();
+                return true;
             }
             memcpy(GlobalLock(h_global), input.c_str(), input.size() + 1);
             GlobalUnlock(h_global);

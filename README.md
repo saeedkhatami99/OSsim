@@ -52,6 +52,7 @@ This is part of a college assignment. The code has been modernized to use C++17 
 - Image rendering (BMP only)
 - MP3 playback
 - Logging
+- Multithreaded command execution and UI updates
 
 ### Modernizations Applied
 
@@ -60,5 +61,7 @@ This is part of a college assignment. The code has been modernized to use C++17 
 - Added comprehensive error handling
 - Improved code structure and readability
 - Enhanced security considerations
+- Implemented multithreading for concurrent UI updates and command execution
+- Added mutexes for thread-safe shared resource access
 
-No external libraries were utilized, which results in some limitations in the program's features. One notable omission in this codebase is the absence of multithreading capabilities (easily implementable, see my [Multithread](https://github.com/saeedkhatami99/MultiThread)).
+No external libraries were utilized, which results in some limitations in the program's features.
