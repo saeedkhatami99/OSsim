@@ -1,4 +1,5 @@
 #include "User_cmd.hpp"
+#include <mutex>
 
 using namespace std;
 
@@ -13,13 +14,8 @@ bool user_cmd::help_c(string cmd) {
 bool user_cmd::print(string cmd) {
     transform(cmd.begin(), cmd.end(), cmd.begin(), ::tolower);
     if (cmd.find("print") != string::npos) {
-        string message = "";
-        const char* str_2_chr = cmd.c_str();
-        cout << "[io-p] ";
-        for (int i = 6; i < strlen(str_2_chr); i++) {
-            cout << str_2_chr[i];
-        }
-        cout << endl;
+        string message = cmd.substr(6);
+        cout << "[io-p] " << message << endl;
         return true;
     }
     return false;
@@ -27,15 +23,12 @@ bool user_cmd::print(string cmd) {
 bool user_cmd::mkdir(string cmd) {
     transform(cmd.begin(), cmd.end(), cmd.begin(), ::tolower);
     if (cmd.find("mkdir") != string::npos) {
-        const char* str_2_chr = cmd.c_str();
-        string dir_name = "";
-        cout << "[mkdir] Created a directory ";
-        for (int i = 6; i < strlen(str_2_chr); i++) {
-            dir_name += str_2_chr[i];
+        string dir_name = cmd.substr(6);
+        if (_mkdir(dir_name.c_str()) != 0) {
+            cout << "[!] Error creating directory " << dir_name << endl;
+        } else {
+            cout << "[mkdir] Created a directory " << dir_name << endl;
         }
-        //dir_name += "/";
-        _mkdir(dir_name.c_str());
-        cout << dir_name << endl;
         return true;
     }
     return false;
@@ -43,109 +36,85 @@ bool user_cmd::mkdir(string cmd) {
 bool user_cmd::ddir(string cmd) {
     transform(cmd.begin(), cmd.end(), cmd.begin(), ::tolower);
     if (cmd.find("ddir") != string::npos) {
-        string delete_directory = "";
-        for (int i = 5; i < strlen(cmd.c_str()); i++) {
-            delete_directory += cmd[i];
+        string delete_directory = cmd.substr(5);
+        if (_rmdir(delete_directory.c_str()) != 0) {
+            cout << "[!] Error removing directory " << delete_directory << endl;
+        } else {
+            cout << "[rmdir] Removed a directory " << delete_directory << endl;
         }
-        _rmdir(delete_directory.c_str());
-        cout << "[rmdir] Removed a directory " << delete_directory << endl;
         return true;
     }
     return false;
 }
-bool user_cmd::ls(string cmd, string custom_path = "") {
+bool user_cmd::ls(string cmd, const string& default_path) {
     transform(cmd.begin(), cmd.end(), cmd.begin(), ::tolower);
     if (cmd.find("ls") != string::npos) {
-        if (strlen(cmd.c_str()) < 4) {
-            char dir[256];
-            _getcwd(dir, 256);
-            std::string path;
-            if (strlen(custom_path.c_str()) > 0)
-                path = custom_path;
-            else
-                path = dir;
+        if (cmd.size() < 4) {
+            std::string path = default_path;
             cout << path << endl;
-            for (const auto& entry : std::filesystem::directory_iterator(path)) {
-                string current_iteration_path = entry.path().string();
-                // cout << "CIP: " << current_iteration_path << endl;
-                string end_iteration_path_result = "";
-                char str_2_chr[1024];
-                bool start_appending = false;
-                for (int i = 0; i < strlen(current_iteration_path.c_str()); i++) {
-                    if (current_iteration_path[i] == 'O' && current_iteration_path[i + 1] == 'S' && !start_appending) {
-                        i += 2;
-                        start_appending = true;
+            try {
+                for (const auto& entry : std::filesystem::directory_iterator(path)) {
+                    string current_iteration_path = entry.path().string();
+                    string end_iteration_path_result = "";
+                    bool start_appending = false;
+                    for (size_t i = 0; i < current_iteration_path.size(); i++) {
+                        if (current_iteration_path.substr(i, 2) == "OS" && !start_appending) {
+                            i += 2;
+                            start_appending = true;
+                        }
+                        if (start_appending) {
+                            end_iteration_path_result += current_iteration_path[i];
+                        }
                     }
-                    if (start_appending) {
-                        end_iteration_path_result += current_iteration_path[i];
-                    }
+                    std::cout << "          " << (char)200 << end_iteration_path_result << std::endl;
                 }
-                std::cout << "          " << (char)200 << end_iteration_path_result << std::endl;
+            } catch (const std::filesystem::filesystem_error& e) {
+                cout << "[!] Error listing directory: " << e.what() << endl;
             }
             return true;
         }
         else {
-            char dir[256];
-            _getcwd(dir, 256);
-            string final_path = "";
-            for (int i = 0; i < strlen(dir); i++) {
-                final_path += dir[i];
-            }
-            char str_2_chr_c[1024];
-            strcpy(str_2_chr_c, cmd.c_str());
-            bool path_check = false;
-            if (str_2_chr_c[3] != '\\') {
-                path_check = true;
-            }
-            for (int i = 3; i < strlen(cmd.c_str()); i++) {
-                if (path_check) {
-                    path_check = false;
-                    final_path += '\\';
-                    i--;
-                }
-                else
-                    final_path += cmd[i];
-            }
-            for (const auto& entry : std::filesystem::directory_iterator(final_path)) {
-                string current_iteration_path = entry.path().string();
-                // cout << "CIP: " << current_iteration_path << endl;
-                string end_iteration_path_result = "";
-                char str_2_chr[1024];
-                bool start_appending = false;
-                for (int i = 0; i < strlen(current_iteration_path.c_str()); i++) {
-                    if (current_iteration_path[i] == 'O' && current_iteration_path[i + 1] == 'S' && !start_appending) {
-                        i += 2;
-                        start_appending = true;
+            std::string final_path = default_path;
+            final_path += (cmd[3] == '\\' ? "" : "\\") + cmd.substr(3);
+            try {
+                for (const auto& entry : std::filesystem::directory_iterator(final_path)) {
+                    string current_iteration_path = entry.path().string();
+                    string end_iteration_path_result = "";
+                    bool start_appending = false;
+                    for (size_t i = 0; i < current_iteration_path.size(); i++) {
+                        if (current_iteration_path.substr(i, 2) == "OS" && !start_appending) {
+                            i += 2;
+                            start_appending = true;
+                        }
+                        if (start_appending) {
+                            end_iteration_path_result += current_iteration_path[i];
+                        }
                     }
-                    if (start_appending) {
-                        end_iteration_path_result += current_iteration_path[i];
-                    }
+                    std::cout << "          " << (char)200 << end_iteration_path_result << std::endl;
                 }
-                std::cout << "          " << (char)200 << end_iteration_path_result << std::endl;
+            } catch (const std::filesystem::filesystem_error& e) {
+                cout << "[!] Error listing directory: " << e.what() << endl;
             }
             return true;
         }
-
-        return true;
     }
     return false;
 }
 bool user_cmd::sysinfo(string cmd) {
     transform(cmd.begin(), cmd.end(), cmd.begin(), ::tolower);
     int cpu_information[4] = { -1 };
-    char cpu_string[0x40];
+    std::string cpu_string(0x40, '\0');
     __cpuid(cpu_information, 0x80000000);
     unsigned int ex_ids = cpu_information[0];
-    memset(cpu_string, 0, sizeof(cpu_string));
     for (int i = 0x80000000; i <= ex_ids; ++i)
     {
         __cpuid(cpu_information, i);
         if (i == 0x80000002)
-            memcpy(cpu_string, cpu_information, sizeof(cpu_information));
+            memcpy(cpu_string.data(), cpu_information, sizeof(cpu_information));
         else if (i == 0x80000003)
-            memcpy(cpu_string + 16, cpu_information, sizeof(cpu_information));
+            memcpy(cpu_string.data() + 16, cpu_information, sizeof(cpu_information));
         else if (i == 0x80000004)
-            memcpy(cpu_string + 32, cpu_information, sizeof(cpu_information));
+            memcpy(cpu_string.data() + 32, cpu_information, sizeof(cpu_information));
     }
     cpu_name_alt = cpu_string;
     SYSTEM_INFO system_info;
@@ -166,16 +135,12 @@ bool user_cmd::sysinfo(string cmd) {
 bool user_cmd::hex(string cmd) {
     transform(cmd.begin(), cmd.end(), cmd.begin(), ::tolower);
     if (cmd.find("hex") != string::npos) {                                      // hex -r test
-        string val_to_hex = "";
+        string val_to_hex = cmd.substr(4);
         bool reverse_hex = false;
-        for (int i = 4; i < strlen(cmd.c_str()); i++) {
-            if(cmd[i] == '-' && cmd[i+1] == 'r'){
-                reverse_hex = true;
-                i += 2;
-            }
-            else {
-                val_to_hex += cmd[i];
-            }
+        size_t space_pos = val_to_hex.find(' ');
+        if (space_pos != string::npos && val_to_hex.substr(0, space_pos) == "-r") {
+            reverse_hex = true;
+            val_to_hex = val_to_hex.substr(space_pos + 1);
         }
         if (reverse_hex) {
             cout << "[+] Hex (reverse) from " << val_to_hex << " is " << strtoul(val_to_hex.c_str(), NULL, 16) << endl;
@@ -183,8 +148,8 @@ bool user_cmd::hex(string cmd) {
         }
         else {
             ostringstream ret;
-            for (string::size_type i = 0; i < val_to_hex.length(); ++i)
-                ret << std::hex << std::setfill('0') << std::setw(2) << (int)val_to_hex[i];
+            for (char c : val_to_hex)
+                ret << std::hex << std::setfill('0') << std::setw(2) << (int)(unsigned char)c;
             cout << "[+] Hex from " << val_to_hex << " is " << ret.str() << endl;
             return true;
         }
@@ -196,10 +161,7 @@ bool user_cmd::hex(string cmd) {
 bool user_cmd::render_img(string cmd) {
     transform(cmd.begin(), cmd.end(), cmd.begin(), ::tolower);
     if (cmd.find("render") != string::npos) {
-        string img_file = "";
-        for (int i = 7; i < strlen(cmd.c_str()); i++) {
-            img_file += cmd[i];
-        }
+        string img_file = cmd.substr(7);
         std::wstring conv_str = std::wstring(img_file.begin(), img_file.end());
         LPCWSTR file = conv_str.c_str();
         RECT rect;
@@ -208,9 +170,22 @@ bool user_cmd::render_img(string cmd) {
         int height = rect.bottom - rect.top;
         unsigned char buf[8];
         std::ifstream in(img_file);
+        if (!in) {
+            cout << "[!] Error opening image file " << img_file << endl;
+            return true;
+        }
         HDC hdc = CreateCompatibleDC(NULL);
+        if (!hdc) {
+            cout << "[!] Error creating device context" << endl;
+            return true;
+        }
         HDC console_dc = GetDC(GetConsoleWindow());
         HBITMAP bmp = (HBITMAP)LoadImageW(NULL, file, IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
+        if (!bmp) {
+            cout << "[!] Error loading image " << img_file << endl;
+            DeleteDC(hdc);
+            return true;
+        }
         BITMAP bm = { 0 };
         GetObject(bmp, sizeof(bm), &bm);
         LONG cx = bm.bmWidth;
@@ -241,7 +216,7 @@ bool user_cmd::exit_sys(string cmd) {
     if (cmd.find("exit") != string::npos) {
         cout << "[-] Turning off the OS..." << endl;
         Sleep(2000);
-        SetConsoleTitle(L"OS - turned off");
+        SetConsoleTitleA("OS - turned off");
         system("cls");
         Sleep(3000);
         exit(EXIT_SUCCESS);
@@ -283,26 +258,28 @@ bool user_cmd::clear(string cmd) {
 }
 bool user_cmd::cd(string cmd, string& path_r) {
     transform(cmd.begin(), cmd.end(), cmd.begin(), ::tolower);
-    char dir[256];
-    _getcwd(dir, 256);
-    std::string path = dir;
+    std::string path = std::filesystem::current_path().string();
     if (cmd.find("cd") != string::npos) {
-        string desired_path = "";
-        for (int i = 3; i < strlen(cmd.c_str()); i++) {
-            desired_path += cmd[i];
-        }
+        string desired_path = cmd.substr(3);
         if (desired_path == "#") {
+            std::lock_guard<std::mutex> lock(path_mutex);
             path_r = path;
             cout << "[+] Working directory is now root." << endl;
             return true;
         }
-        if (filesystem::is_directory(path + "\\" + desired_path)) {
-            cout << "[+] Changed working directory to \\" + desired_path + "\\" << endl;
-            path_r = path + "\\" + desired_path;
-            return true;
-        }
-        else {
-            cout << "[!] Directory not found or there was an error while reading the path." << endl;
+        try {
+            if (filesystem::is_directory(path + "\\" + desired_path)) {
+                std::lock_guard<std::mutex> lock(path_mutex);
+                path_r = path + "\\" + desired_path;
+                cout << "[+] Changed working directory to \\" + desired_path + "\\" << endl;
+                return true;
+            }
+            else {
+                cout << "[!] Directory not found or there was an error while reading the path." << endl;
+                return true;
+            }
+        } catch (const std::filesystem::filesystem_error& e) {
+            cout << "[!] Error accessing directory: " << e.what() << endl;
             return true;
         }
     }
@@ -311,24 +288,15 @@ bool user_cmd::cd(string cmd, string& path_r) {
 bool user_cmd::mp3(string cmd) {
     transform(cmd.begin(), cmd.end(), cmd.begin(), ::tolower);
     if (cmd.find(".mp3") != string::npos) {
-        char dir[256];
-        _getcwd(dir, 256);
-        string path_to_file = "";
-        for (int i = 0; i < strlen(dir); i++) {
-            if (dir[i] == '\\')
-                path_to_file += '\\';
-            path_to_file += dir[i];
-        }
-        path_to_file = path_to_file + "\\" + "\\" + cmd;
+        std::string path_to_file = std::filesystem::current_path().string() + "\\" + cmd;
         string fn_arg = "open " + path_to_file + " type mpegvideo alias song1";
-        std::wstring conv_str = std::wstring(fn_arg.begin(), fn_arg.end());
         cout << "[player] Playing song: " << cmd << "(press INSERT to stop playing it)" << endl;
-        LPCWSTR lpc_cmd = conv_str.c_str();
-        MCIERROR mci_err = mciSendString(lpc_cmd, NULL, 0, 0);
-        mci_err = mciSendString(L"play song1", NULL, 0, 0);
+        LPCSTR lpc_cmd = fn_arg.c_str();
+        MCIERROR mci_err = mciSendStringA(lpc_cmd, NULL, 0, 0);
+        mci_err = mciSendStringA("play song1", NULL, 0, 0);
         while (true) {
             if (GetAsyncKeyState(VK_INSERT)) {
-                mciSendString(L"close song1", NULL, 0, 0);
+                mciSendStringA("close song1", NULL, 0, 0);
                 break;
             }
             Sleep(1);
@@ -340,13 +308,14 @@ bool user_cmd::mp3(string cmd) {
 bool user_cmd::cfile(string cmd) {
     transform(cmd.begin(), cmd.end(), cmd.begin(), ::tolower);
     if (cmd.find("cfile") != string::npos) {
-        string file_name_ext = "";
-        for (int i = 6; i < strlen(cmd.c_str()); i++) {
-            file_name_ext += cmd[i];
-        }
+        string file_name_ext = cmd.substr(6);
         ofstream create_file(file_name_ext);
-        create_file.close();
-        cout << "[+] Created file " << file_name_ext << endl;
+        if (!create_file) {
+            cout << "[!] Error creating file " << file_name_ext << endl;
+        } else {
+            create_file.close();
+            cout << "[+] Created file " << file_name_ext << endl;
+        }
         return true;
     }
     return false;
@@ -354,12 +323,12 @@ bool user_cmd::cfile(string cmd) {
 bool user_cmd::dfile(string cmd) {
     transform(cmd.begin(), cmd.end(), cmd.begin(), ::tolower);
     if (cmd.find("dfile") != string::npos) {
-        string delete_file = "";
-        for (int i = 6; i < strlen(cmd.c_str()); i++) {
-            delete_file += cmd[i];
+        string delete_file = cmd.substr(6);
+        if (!std::filesystem::remove(delete_file)) {
+            cout << "[!] Error deleting file " << delete_file << endl;
+        } else {
+            cout << "[+] Deleted file " << delete_file << endl;
         }
-        std::filesystem::remove(delete_file);
-        cout << "[+] Deleted file " << delete_file << endl;
         return true;
     }
     return false;
@@ -367,9 +336,7 @@ bool user_cmd::dfile(string cmd) {
 bool user_cmd::exe(string cmd) {
     transform(cmd.begin(), cmd.end(), cmd.begin(), ::tolower);
     if (cmd.find(".exe") != string::npos) {
-        std::wstring conv_str = std::wstring(cmd.begin(), cmd.end());
-        LPCWSTR executable_path = conv_str.c_str();
-        ShellExecute(NULL, L"open", executable_path, NULL, NULL, SW_SHOWDEFAULT); // system is shit, createprocess defeats the purpose
+        ShellExecuteA(NULL, "open", cmd.c_str(), NULL, NULL, SW_SHOWDEFAULT); // system is shit, createprocess defeats the purpose
         cout << "[+] Ran an executable file: " << cmd << endl;
         return true;
     }
@@ -384,7 +351,7 @@ bool user_cmd::con_color(string cmd) {
         string color2 = "";
         int start_idx = 9;
         int start_idx2 = 0;
-        for (int i = start_idx; i < strlen(cmd.c_str()); i++) {
+        for (size_t i = start_idx; i < cmd.size(); i++) {
             if (cmd[i] == ' ') {
                 start_idx2 = i+1;
                 break;
@@ -393,7 +360,7 @@ bool user_cmd::con_color(string cmd) {
                 color1 += cmd[i];
             }
         }
-        for (int j = start_idx2; j < strlen(cmd.c_str()); j++) {
+        for (size_t j = start_idx2; j < cmd.size(); j++) {
             color2 += cmd[j];
         }
         cout << color1 << " " << color2 << endl;
@@ -436,19 +403,15 @@ bool user_cmd::con_color(string cmd) {
 bool user_cmd::nano(string cmd) {
     transform(cmd.begin(), cmd.end(), cmd.begin(), ::tolower);
     if (cmd.find("nano") != string::npos) {
-        string selected_nano_mode = "";
-        for (int i = 5; i < 7; i++) {
-            selected_nano_mode += cmd[i];
-        }
+        string selected_nano_mode = cmd.substr(5, 2);
         if (selected_nano_mode == "-v") {
-            string nano_file = "";
-            for (int i = 8; i < strlen(cmd.c_str()); i++) {
-                nano_file += cmd[i];
-            }
+            string nano_file = cmd.substr(8);
             cout << endl << "[+] nano -> " << nano_file << endl << endl;
             fstream file;
             file.open(nano_file, ios::in);
-            if (file.is_open()) {
+            if (!file.is_open()) {
+                cout << "[!] Error opening file " << nano_file << endl;
+            } else {
                 string tp;
                 while (getline(file, tp)) {
                     cout << tp << "\n";
@@ -458,10 +421,7 @@ bool user_cmd::nano(string cmd) {
             return true;
         }
         else if (selected_nano_mode == "-e") {
-            string nano_file = "";
-            for (int i = 8; i < strlen(cmd.c_str()); i++) {
-                nano_file += cmd[i];
-            }
+            string nano_file = cmd.substr(8);
             string input;
             fstream file;
             file.open(nano_file, ios::in);
@@ -509,11 +469,19 @@ bool user_cmd::nano(string cmd) {
             Sleep(1000);
 
             getline(std::cin >> std::ws, input);
-            filesystem::remove(nano_file);
+            try {
+                filesystem::remove(nano_file);
+            } catch (const std::filesystem::filesystem_error& e) {
+                cout << "[!] Error removing old file: " << e.what() << endl;
+            }
             ofstream create_file(nano_file);
-            create_file << input;
-            create_file.close();
-            cout << "[+] Nano -> success (" << nano_file << ")" << endl;
+            if (!create_file) {
+                cout << "[!] Error creating file " << nano_file << endl;
+            } else {
+                create_file << input;
+                create_file.close();
+                cout << "[+] Nano -> success (" << nano_file << ")" << endl;
+            }
             return true;
         }
         else {
@@ -523,4 +491,5 @@ bool user_cmd::nano(string cmd) {
 
         return false;
     }
+    return false;
 }

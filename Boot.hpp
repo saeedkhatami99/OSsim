@@ -48,11 +48,11 @@ void display_current_statistics_title() {
 		console_title += "MB";
 
 		std::wstring conv_str = std::wstring(console_title.begin(), console_title.end());
-		LPCWSTR console_title_w = conv_str.c_str();
-		SetConsoleTitle(console_title_w);
+		LPCSTR console_title_a = console_title.c_str();
+		SetConsoleTitleA(console_title_a);
 	}
 	else {
-		SetConsoleTitle(L"OS");
+		SetConsoleTitleA("OS");
 	}
 }
 
@@ -105,6 +105,7 @@ bool login() {
 
 		return true;
 	}
+	return false;
 }
 
 bool boot() {
@@ -129,21 +130,19 @@ bool boot() {
 	runtime_data += asctime(timeinfo);
 
 	int cpu_information[4] = { -1 };
-	char cpu_string[0x40];
+	std::string cpu_string(0x40, '\0');
 	__cpuid(cpu_information, 0x80000000);
 	unsigned int ex_ids = cpu_information[0];
-
-	memset(cpu_string, 0, sizeof(cpu_string));
 
 	for (int i = 0x80000000; i <= ex_ids; ++i)
 	{
 		__cpuid(cpu_information, i);
 		if (i == 0x80000002)
-			memcpy(cpu_string, cpu_information, sizeof(cpu_information));
+			memcpy(cpu_string.data(), cpu_information, sizeof(cpu_information));
 		else if (i == 0x80000003)
-			memcpy(cpu_string + 16, cpu_information, sizeof(cpu_information));
+			memcpy(cpu_string.data() + 16, cpu_information, sizeof(cpu_information));
 		else if (i == 0x80000004)
-			memcpy(cpu_string + 32, cpu_information, sizeof(cpu_information));
+			memcpy(cpu_string.data() + 32, cpu_information, sizeof(cpu_information));
 	}
 	cpu_name = cpu_string;
 

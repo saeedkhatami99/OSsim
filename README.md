@@ -1,22 +1,64 @@
 # Operating System Simulation
+
 A straightforward OS/terminal simulation with fundamental system capabilities (resembling Linux).
 
-# Known Bug
-- The `ls` command may lead to a program crash when attempting to list directories within a non-existent path.
-`ls` will output blank directories/files if OS executable is not placed and ran in a folder named **OS**
+## Build Instructions
 
-- Currently only `BMP` files are being rendered in terminal, you will need to add `BMP` conversion functions to actually render other
-file types.
+This project is written in C++ and requires a C++ compiler that supports C++17 or later (for std::filesystem).
 
+### Prerequisites
 
-# This project is part of a college assignment.
-Running this code as is isn't recommended. This version is stable and covers essential functionalities,
-but it should be further expanded. No external libraries were utilized, which results in some limitations
-in the program's features. One notable omission in this codebase is the absence of multithreading capabilities
-(easily implementable, see my [Multithread](https://github.com/saeedkhatami/MultiThread)).
+- Windows OS (due to Windows-specific APIs)
+- C++ compiler (e.g., Visual Studio, MinGW)
+- Windows SDK for Windows APIs
 
-# Which programming languages were used?
-**C++**, with a bit of **C** thrown into the mix. It might not be fancy, but it gets the job done.
+### Building
 
-# Program's Capabilities
-The program itself can perform a variety of fundamental tasks. When you run it, you can see a list of available functions by typing `help`. All functions are currently stored in the _User_cmd.hpp_ file and organized within a namespace. This structure makes it easy to declare and define new functions. A nifty feature you can add is having the program automatically recognize mathematical expressions and output the answers!
+1. Clone or download the repository.
+2. Compile the source files: `OS.cpp`, `User_cmd.cpp`, and headers `Boot.hpp`, `Core.hpp`, `Logs.hpp`, `User_cmd.hpp`.
+3. Link with required libraries: `Winmm.lib` (for MP3 playback).
+4. Example command with g++:
+
+   ```ps
+   g++ -std=c++17 OS.cpp User_cmd.cpp -o OSsim.exe -lwinmm
+   ```
+
+### Running
+
+- Run `OSsim.exe` from the command line.
+- The program requires elevated privileges.
+- On first run, create a user account.
+- Type `help` for available commands.
+
+## Known Issues
+
+- The `ls` command may crash when attempting to list directories within a non-existent path. (Fixed in modern version with error handling)
+- Currently only `BMP` files are being rendered in terminal, you will need to add `BMP` conversion functions to actually render other file types.
+
+## Project Details
+
+This is part of a college assignment. The code has been modernized to use C++17 features, improved error handling, and better code structure.
+
+### Programming Languages
+
+- **C++** (with some C-style elements for Windows compatibility)
+
+### Features
+
+- User authentication
+- File and directory operations
+- System information display
+- Basic text editing
+- Image rendering (BMP only)
+- MP3 playback
+- Logging
+
+### Modernizations Applied
+
+- Replaced C-style strings with std::string
+- Used modern C++ features (auto, range-based loops, filesystem)
+- Added comprehensive error handling
+- Improved code structure and readability
+- Enhanced security considerations
+
+No external libraries were utilized, which results in some limitations in the program's features. One notable omission in this codebase is the absence of multithreading capabilities (easily implementable, see my [Multithread](https://github.com/saeedkhatami99/MultiThread)).
