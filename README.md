@@ -53,14 +53,4 @@ This is part of a college assignment. The code has been modernized to use C++17 
 - Logging
 - Multithreaded command execution and UI updates
 
-### Modernizations Applied
-
-- Replaced C-style strings with std::string
-- Used modern C++ features (auto, range-based loops, filesystem)
-- Added comprehensive error handling
-- Improved code structure and readability
-- Enhanced security considerations
-- Implemented multithreading for concurrent UI updates and command execution
-- Added mutexes for thread-safe shared resource access
-
 No external libraries were utilized, which results in some limitations in the program's features.
